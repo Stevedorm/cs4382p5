@@ -41,37 +41,71 @@ public class Breaking {
 
     public static void main(String[] args) throws Exception {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
-        Mac mac = Mac.getInstance("HmacSHA256");
+        String charset = "abcdefghijklmnopqrstuvwxyz";
 
-        // Try every password from the wordlist passed as argument
-        // Usage: java Breaking rockyou.txt
-        java.io.BufferedReader br = new java.io.BufferedReader(
-            new java.io.InputStreamReader(new java.io.FileInputStream(args[0]), "ISO-8859-1"));
-
-        String guess;
-        while ((guess = br.readLine()) != null) {
-            // Hash the password to get the key
-            md.reset();
-            byte[] pwdHash = md.digest(guess.getBytes("UTF-8"));
-
-            // Use first 16 bytes of hash as AES key
-            byte[] key = Arrays.copyOf(pwdHash, 16);
-
-            // Compute HMAC-SHA256 of ciphertext
-            SecretKeySpec sks = new SecretKeySpec(key, "AES");
-            mac.init(sks);
-            byte[] result = mac.doFinal(CIPHERTEXT);
-
-            // Check if it matches
-            if (Arrays.equals(result, TARGET_MAC)) {
-                System.out.println("Password found: " + guess);
+        // Loop through alphabetic combinations until SHA-256 starts with 0xBC, 0xB0
+        for (int len = 1; len <= 6; len++) {
+            String result = search(md, charset, "", len);
+            if (result != null) {
+                byte[] hash = md.digest(result.getBytes("UTF-8"));
+                System.out.println("Password found: " + result);
                 System.out.printf("First two bytes of hash: 0x%02X 0x%02X%n",
-                    pwdHash[0], pwdHash[1]);
-                br.close();
+                    hash[0], hash[1]);
                 return;
             }
         }
-        br.close();
-        System.out.println("Password not found.");
     }
+
+    static String search(MessageDigest md, String charset, String prefix, int remaining)
+            throws Exception {
+        if (remaining == 0) {
+            md.reset();
+            byte[] hash = md.digest(prefix.getBytes("UTF-8"));
+            if ((hash[0] & 0xFF) == 0xBC && (hash[1] & 0xFF) == 0xB0)
+                return prefix;
+            return null;
+        }
+        for (char c : charset.toCharArray()) {
+            String result = search(md, charset, prefix + c, remaining - 1);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+
+    // public static void main(String[] args) throws Exception {
+    //     MessageDigest md = MessageDigest.getInstance("SHA-256");
+    //     Mac mac = Mac.getInstance("HmacSHA256");
+
+    //     // Try every password from the wordlist passed as argument
+    //     // Usage: java Breaking rockyou.txt
+    //     java.io.BufferedReader br = new java.io.BufferedReader(
+    //         new java.io.InputStreamReader(new java.io.FileInputStream(args[0]), "ISO-8859-1"));
+
+    //     String guess;
+    //     while ((guess = br.readLine()) != null) {
+    //         // Hash the password to get the key
+    //         md.reset();
+    //         byte[] pwdHash = md.digest(guess.getBytes("UTF-8"));
+
+    //         // Use first 16 bytes of hash as AES key
+    //         byte[] key = Arrays.copyOf(pwdHash, 16);
+
+    //         // Compute HMAC-SHA256 of ciphertext
+    //         SecretKeySpec sks = new SecretKeySpec(key, "AES");
+    //         mac.init(sks);
+    //         byte[] result = mac.doFinal(CIPHERTEXT);
+
+    //         // Check if it matches
+    //         if (Arrays.equals(result, TARGET_MAC)) {
+    //             System.out.println("Password found: " + guess);
+    //             System.out.printf("First two bytes of hash: 0x%02X 0x%02X%n",
+    //                 pwdHash[0], pwdHash[1]);
+    //             br.close();
+    //             return;
+    //         }
+    //     }
+    //     br.close();
+    //     System.out.println("Password not found.");
+    // }
 }
