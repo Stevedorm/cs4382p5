@@ -3,7 +3,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 
-public class Breaking {
+public class breaking {
 
     static final byte[] CIPHERTEXT = {
         (byte)0x34,(byte)0x3B,(byte)0x71,(byte)0x62,(byte)0xBA,(byte)0x9F,(byte)0x55,(byte)0xB8,(byte)0xD9,(byte)0x88,
@@ -61,7 +61,7 @@ public class Breaking {
         if (remaining == 0) {
             md.reset();
             byte[] hash = md.digest(prefix.getBytes("UTF-8"));
-            if ((hash[0] & 0xFF) == 0xBC && (hash[1] & 0xFF) == 0xB0)
+            if ((hash[0] & 0xFF) == 0x12 && (hash[1] & 0xFF) == 0x2)
                 return prefix;
             return null;
         }
